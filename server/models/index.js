@@ -4,6 +4,8 @@ const Asset = require('./Asset');
 const DialogueLine = require('./DialogueLine');
 const Scene = require('./Scene');
 const SceneAsset = require('./SceneAsset');
+const Choice = require('./Choice');
+const UserProgress = require('./UserProgress');
 
 // Ассоциации
 // Связь с диалогами
@@ -31,4 +33,4 @@ sequelize.sync({ alter: true }).then(() => {
   console.log('Database synced without clearing data!');
 });
 
-module.exports = { sequelize, User, Asset, DialogueLine, Scene, SceneAsset };
+module.exports = { sequelize, User, Asset, DialogueLine, Scene, SceneAsset, UserProgress, Choice };

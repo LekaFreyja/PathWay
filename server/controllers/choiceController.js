@@ -1,16 +1,17 @@
 const { Choice, UserProgress } = require('../models');
 
 class ChoiceController {
-  static async createChoice(req, res) {
-    try {
-      const { sceneId, text, nextSceneId } = req.body;
-      const newChoice = await Choice.create({ sceneId, text, nextSceneId });
-      res.status(201).json(newChoice);
-    } catch (error) {
-        console.error('Error adding choice:', error);
-        res.status(500).json({ error: 'Ошибка при добавлении выбора' });
-    }
-  }
+    static async createChoice(req, res) {
+        try {
+          const { sceneId, text, nextSceneId } = req.body;
+          console.log('Request body:', req.body); // Логирование входящих данных
+          const newChoice = await Choice.create({ sceneId, text, nextSceneId });
+          res.status(201).json(newChoice);
+        } catch (error) {
+          console.error('Error adding choice:', error);
+          res.status(500).json({ error: 'Ошибка при добавлении выбора' });
+        }
+      }
 
   static async getChoices(req, res) {
     try {

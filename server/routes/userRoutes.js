@@ -6,6 +6,7 @@ const {
   requestPasswordReset,
   resetPassword,
   updateUserRole,
+  getAllUsers
 } = require('../controllers/userController');
 const authenticateJWT = require('../middleware/authMiddleware')
 const isAdmin = require('../middleware/roleMiddleware');
@@ -14,7 +15,7 @@ const router = express.Router();
 
 // Регистрация
 router.post('/register', registerUser);
-
+router.get('/users', getAllUsers);
 // Логин
 router.post('/login', loginUser);
 
