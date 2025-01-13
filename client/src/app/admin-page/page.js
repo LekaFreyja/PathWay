@@ -13,6 +13,9 @@ export default function AdminPanel() {
         { id: "assets", label: "Ассеты" },
         { id: "dialogues", label: "Реплики" },
         { id: "scenes", label: "Сцены" },
+        { id: "choice", label: "Выборы" },
+        { id: "editscene", label: "Редактор сцен" },
+        { id: "branch", label: "Выборы" },
     ];
 
     const [assetName, setAssetName] = useState("");
@@ -65,6 +68,49 @@ export default function AdminPanel() {
 
     const handleNavigation = (path) => {
         router.push(path);
+    };
+
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [branch, setBranch] = useState('');
+    const [assetId, setAssetId] = useState('');
+
+    const handleSubmitEditScene = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put(`http://localhost:3000/api/scenes/${sceneId}`, { name, description, order, branch, assetId });
+            alert('Scene updated successfully!');
+        } catch (error) {
+            alert('Error updating scene.');
+        }
+    };
+// Form state for choices
+const [choiceText, setChoiceText] = useState("");
+const [nextSceneId, setNextSceneId] = useState("");
+
+    const handleAddChoice = async (e) => {
+        e.preventDefault();
+        try {
+            const response = axios.post('http://localhost:3000/api/choices', {
+                sceneId,
+                text: choiceText,
+                nextSceneId,
+            });
+            setMessage(response.data);
+            fetchAssetsAndScenes();
+        } catch (error) {
+            setMessage(response.data.error);
+        }
+    };
+
+    const handleSubmitBranch = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put(`http://localhost:3000/api/scenes/${sceneId}`, { branch });
+            alert('Branch updated successfully!');
+        } catch (error) {
+            alert('Error updating branch.');
+        }
     };
 
     const handleAddAsset = async (e) => {
@@ -390,7 +436,80 @@ export default function AdminPanel() {
                             </form>
                         </div>
                     )}
-
+                    {activeTab === "choice" && (
+                        <div className="mb-8">
+                            <h3 className="text-xl text-white mb-4">Выборы</h3>
+                            <form onSubmit={handleAddChoice} className="grid gap-4">
+                                <div className="flex flex-col">
+                                    <label className="text-gray-400">Текст выбора</label>
+                                    <textarea
+                                        value={choiceText}
+                                        onChange={(e) => setChoiceText(e.target.value)}
+                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                        rows="4"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-gray-400">Сцена</label>
+                                    <select
+                                        value={sceneId}
+                                        onChange={(e) => setSceneId(e.target.value)}
+                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                        required
+                                    >
+                                        <option value="">Выберите сцену</option>
+                                        {scenes.map((scene) => (
+                                            <option key={scene.id} value={scene.id}>
+                                                {scene.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-gray-400">Ветка после выбора</label>
+                                    <select
+                                        value={nextSceneId}
+                                        onChange={(e) => setNextSceneId(e.target.value)}
+                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                        required
+                                    >
+                                        <option value="">Выберите сцену</option>
+                                        {scenes.map((scene) => (
+                                            <option key={scene.id} value={scene.id}>
+                                                {scene.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
+                                    Добавить выбор
+                                </button>
+                            </form>
+                        </div>
+                    )}
+                    {activeTab === "branch" && (
+                        <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                            <h2>Edit Branch</h2>
+                            <form onSubmit={handleSubmitBranch}>
+                                <input
+                                    type="text"
+                                    placeholder="Scene ID"
+                                    value={sceneId}
+                                    onChange={(e) => setSceneId(e.target.value)}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Branch"
+                                    value={branch}
+                                    onChange={(e) => setBranch(e.target.value)}
+                                    required
+                                />
+                                <button type="submit">Update Branch</button>
+                            </form>
+                        </div>
+                    )}
                     {/* Message */}
                     {message && <p className="mt-4 text-green-500 text-center">{message}</p>}
                     {/* Logout and Navigation Buttons */}

@@ -7,6 +7,7 @@ const assetRoutes = require('./routes/assetRoutes');
 const userRoutes = require('./routes/userRoutes');
 const dialogueRoutes = require('./routes/dialogueRoutes');
 const sceneRoutes = require('./routes/sceneRoutes');
+const choiceRoutes = require('./routes/choiceRoutes');
 const cors = require("cors");
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', assetRoutes);
 app.use('/api', dialogueRoutes);
 app.use('/api', sceneRoutes);
+app.use('/api', choiceRoutes);
 sequelize
   .authenticate()
   .then(() => console.log('Database connected...'))
