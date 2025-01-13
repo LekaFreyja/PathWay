@@ -183,9 +183,10 @@ const [nextSceneId, setNextSceneId] = useState("");
 
     return (
         <AuthGuard requiredRole={'admin'}>
-            <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
-                <div className="bg-gray-800 p-8 rounded-lg shadow-lg max-w-4xl w-full">
-                    <h2 className="text-3xl mb-6 text-center text-white">Admin Panel</h2>
+<div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
+    <div className="flex w-full max-w-6xl">
+        <div className="flex-grow bg-gray-800 p-8 rounded-lg shadow-lg" style={{ width: "80%" }}>
+            <h2 className="text-3xl mb-6 text-center text-white">Admin Panel</h2>
 
                     {/* Tabs */}
                     <div className="flex justify-center space-x-4 mb-6">
@@ -538,31 +539,33 @@ const [nextSceneId, setNextSceneId] = useState("");
                     </div>
 
                 </div>
-                <div className="w-1/5 bg-gray-800 p-4 rounded-lg shadow-md ml-4" style={{ minHeight: "100vh", backgroundColor: "#2a2a2a" }}>
-                        <h3 className="text-xl text-white mb-4">Пользователи</h3>
-                        <table className="w-full text-left bg-gray-700 text-white">
-                            <thead>
-                                <tr>
-                                    <th className="py-2 px-4">Username</th>
-                                    <th className="py-2 px-4">Email</th>
-                                    <th className="py-2 px-4">Role</th>
-                                    <th className="py-2 px-4">Verified</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map(user => (
-                                    <tr key={user.email}>
-                                        <td className="py-2 px-4 border-t border-gray-600">{user.username}</td>
-                                        <td className="py-2 px-4 border-t border-gray-600">{user.email}</td>
-                                        <td className="py-2 px-4 border-t border-gray-600">{user.role}</td>
-                                        <td className="py-2 px-4 border-t border-gray-600">{user.verified ? 'Yes' : 'No'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="w-1/5 p-4 rounded-lg shadow-md ml-4" style={{ minHeight: "100vh", backgroundColor: "#2a2a2a" }}>
+            <h3 className="text-xl text-white mb-4">Пользователи</h3>
+            <div className="overflow-auto"> {/* Обертка для адаптивности таблицы */}
+                <table className="w-full text-left bg-gray-700 text-white">
+                    <thead>
+                        <tr>
+                            <th className="py-2 px-4">Username</th>
+                            <th className="py-2 px-4">Email</th>
+                            <th className="py-2 px-4">Role</th>
+                            <th className="py-2 px-4">Verified</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map(user => (
+                            <tr key={user.email}>
+                                <td className="py-2 px-4 border-t border-gray-600">{user.username}</td>
+                                <td className="py-2 px-4 border-t border-gray-600">{user.email}</td>
+                                <td className="py-2 px-4 border-t border-gray-600">{user.role}</td>
+                                <td className="py-2 px-4 border-t border-gray-600">{user.verified ? 'Yes' : 'No'}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
                     </div>
             </div>
-
+            </div>
 
         </AuthGuard>
 
