@@ -18,6 +18,7 @@ export default function AdminPanel() {
         { id: "choice", label: "Выборы" },
         { id: "editscene", label: "Редактор сцен" },
         { id: "branch", label: "Выборы" },
+        { id: "editdialogue", label: "Редактор реплик" }
     ];
 
     const [assetName, setAssetName] = useState("");
@@ -42,6 +43,7 @@ export default function AdminPanel() {
     const [sceneDescription, setSceneDescription] = useState("");  // Состояние для описания сцены
     const [backgroundAssets, setBackgroundAssets] = useState(''); // Идентификатор выбранного ассета
     const [backgroundAsset, setBackgroundAsset] = useState(''); // Идентификатор выбранного ассета
+    const [assets, setAssets] = useState([]);
     const [characters, setCharacters] = useState([]);
     const [lastDialogue, setLastDialogue] = useState([])
     const [scenes, setScenes] = useState([]);
@@ -88,6 +90,7 @@ export default function AdminPanel() {
             ]);
 
             setBackgroundAssets(assetsResponse.data.filter(asset => asset.type === 'background')); // Обновляем персонажей
+            setAssets(assetsResponse.data);
             setScenes(scenesResponse.data); // Обновляем сцены
             setCharacters(assetsResponse.data.filter(asset => asset.type === 'character'))
             setLastDialogue(scenesResponse.data[0].dialogueLines)
@@ -116,7 +119,49 @@ export default function AdminPanel() {
     const handleNavigation = (path) => {
         router.push(path);
     };
+    const [isDialogueModalOpen, setIsDialogueModalOpen] = useState(false);
+    const [selectedDialogue, setSelectedDialogue] = useState(null);
+    const [editDialogueText, setEditDialogueText] = useState("");
+    const [editDialogueCharacter, setEditDialogueCharacter] = useState("");
+    const [editDialogueOrder, setEditDialogueOrder] = useState("");
+    const [editDialoguePosition, setEditDialoguePosition] = useState({ x: "", y: "" });
 
+    const handleDialogueClick = async (dialogueId) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/api/dialogues/${dialogueId}`);
+            const dialogueData = response.data;
+            setEditDialogueText(dialogueData.text);
+            setEditDialogueCharacter(dialogueData.characterId);
+            setEditDialogueOrder(dialogueData.order);
+            setEditDialoguePosition(dialogueData.position);
+            setSelectedDialogue(dialogueData);
+            setIsDialogueModalOpen(true);
+        } catch (error) {
+            setMessage('Error fetching dialogue data');
+        }
+    };
+
+    const closeDialogueModal = () => {
+        setIsDialogueModalOpen(false);
+        setSelectedDialogue(null);
+    };
+
+    const handleSubmitEditDialogue = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put(`http://localhost:3000/api/dialogues/${selectedDialogue.id}`, {
+                text: editDialogueText,
+                characterId: editDialogueCharacter,
+                order: editDialogueOrder,
+                position: editDialoguePosition,
+            });
+            alert('Dialogue updated successfully!');
+            fetchAssetsAndScenes(); // Refresh the data
+        } catch (error) {
+            console.log(error);
+            alert('Error updating dialogue.');
+        }
+    };
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [branch, setBranch] = useState('');
@@ -614,17 +659,114 @@ export default function AdminPanel() {
                                             />
                                         </div>
                                         <div className="flex flex-col">
-                                            <label className="text-gray-400">ID ассета</label>
-                                            <input
-                                                type="text"
+                                            <label className="text-gray-400">Ассет</label>
+                                            <select
                                                 value={assetId}
                                                 onChange={(e) => setAssetId(e.target.value)}
                                                 className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                                 required
-                                            />
+                                            >
+                                                <option value="">Select Asset</option>
+                                                {backgroundAssets.map((asset) => (
+                                                    <option key={asset.id} value={asset.id}>
+                                                        {asset.name}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                                             Обновить сцену
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === "editdialogue" && (
+                            <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                                <h2 className="text-3xl text-white mb-6 text-center">Редактор реплик</h2>
+                                <div className="grid gap-6">
+                                    {scenes.map((scene) => (
+                                        scene.dialogueLines.map((dialogue) => (
+                                            <div
+                                                key={dialogue.id}
+                                                className="p-4 bg-gray-700 rounded cursor-pointer hover:bg-gray-600"
+                                                onClick={() => handleDialogueClick(dialogue.id)}
+                                            >
+                                                {dialogue.text}
+                                            </div>
+                                        ))
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {isDialogueModalOpen && selectedDialogue && (
+                            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                                <div className="bg-gray-800 text-white rounded-lg w-full max-w-3xl p-6 shadow-lg">
+                                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={closeDialogueModal}>
+                                        &times;
+                                    </button>
+                                    <h3 className="text-2xl mb-4">Редактировать реплику</h3>
+                                    <form onSubmit={handleSubmitEditDialogue} className="grid gap-6">
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Текст</label>
+                                            <textarea
+                                                value={editDialogueText}
+                                                onChange={(e) => setEditDialogueText(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                rows="4"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Персонаж</label>
+                                            <select
+                                                value={editDialogueCharacter}
+                                                onChange={(e) => setEditDialogueCharacter(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            >
+                                                <option value="">Select Character</option>
+                                                {characters.map((character) => (
+                                                    <option key={character.id} value={character.id}>
+                                                        {character.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Порядок</label>
+                                            <input
+                                                type="number"
+                                                value={editDialogueOrder}
+                                                onChange={(e) => setEditDialogueOrder(Number(e.target.value))}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Позиция (x, y)</label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="number"
+                                                    value={editDialoguePosition.x}
+                                                    onChange={(e) => setEditDialoguePosition({ ...editDialoguePosition, x: Number(e.target.value) })}
+                                                    className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                    placeholder="x"
+                                                    required
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={editDialoguePosition.y}
+                                                    onChange={(e) => setEditDialoguePosition({ ...editDialoguePosition, y: Number(e.target.value) })}
+                                                    className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                    placeholder="y"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            Обновить реплику
                                         </button>
                                     </form>
                                 </div>

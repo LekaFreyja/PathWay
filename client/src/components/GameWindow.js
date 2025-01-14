@@ -1,28 +1,98 @@
-// client/src/app/components/GameWindow.js
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import AuthGuard from './AuthGuard';
-
+import axios from 'axios';
 const GameWindow = ({ initialSceneId, className }) => {
+
+
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sceneId, setSceneId] = useState(initialSceneId);
-
   const [scene, setScene] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+
   const currentDialogue = useMemo(() => {
     return scene && scene.dialogueLines && scene.dialogueLines[dialogueIndex];
   }, [scene, dialogueIndex]);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          return;
+        }
+        const response = await axios.get('http://localhost:3000/api/users/me', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+        setUserId(response.data.user.id);
+
+      } catch (error) {
+        console.error('Ошибка при проверке пользователя:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const fetchAllScenes = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:3000/api/scenes');
+      const data = await res.json();
+      const sortedScenes = data.sort((a, b) => a.order - b.order);
+      return sortedScenes;
+    } catch (err) {
+      console.error('Ошибка загрузки всех сцен:', err);
+    }
+  }, []);
+
+  const fetchUserProgress = useCallback(async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/useruserprogress/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSceneId(data.currentSceneId);
+      } else {
+        const scenes = await fetchAllScenes();
+        if (scenes && scenes.length > 0) {
+          const firstScene = scenes[0];
+          setSceneId(firstScene.id);
+          await fetch(`http://localhost:3000/api/userprogress`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId,
+              currentSceneId: firstScene.id,
+              branch: firstScene.id
+            }),
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки прогресса пользователя:', err);
+    }
+  }, [userId, fetchAllScenes]);
 
   const fetchScene = useCallback(async (sceneId) => {
     setIsLoading(true);
     try {
       const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}`);
       const data = await res.json();
-      const sortedDialogueLines = data.dialogueLines.sort((a, b) => a.order - b.order);
+      const sortedDialogueLines = Array.isArray(data.dialogueLines)
+        ? data.dialogueLines.sort((a, b) => a.order - b.order)
+        : [];
       setScene({ ...data, dialogueLines: sortedDialogueLines });
       setDialogueIndex(0);
     } catch (err) {
@@ -33,7 +103,13 @@ const GameWindow = ({ initialSceneId, className }) => {
   }, []);
 
   useEffect(() => {
-    fetchScene(sceneId);
+    fetchUserProgress();
+  }, [fetchUserProgress]);
+
+  useEffect(() => {
+    if (sceneId) {
+      fetchScene(sceneId);
+    }
   }, [sceneId, fetchScene]);
 
   useEffect(() => {
@@ -80,10 +156,7 @@ const GameWindow = ({ initialSceneId, className }) => {
 
   return (
     <AuthGuard>
-      <div
-        className={`relative w-full h-full flex flex-col ${className}`}
-        onClick={handleNextDialogue}
-      >
+      <div className={`relative w-full h-full flex flex-col ${className}`} onClick={handleNextDialogue}>
         {backgroundUrl && (
           <Image
             src={backgroundUrl}
@@ -98,12 +171,13 @@ const GameWindow = ({ initialSceneId, className }) => {
         <div className="flex flex-col justify-end h-full z-10">
           {currentDialogue?.characterAsset && (
             <div
-              className={`flex items-center ${currentDialogue.characterAsset.position === 'left'
-                ? 'justify-start'
-                : currentDialogue.characterAsset.position === 'right'
+              className={`flex items-center ${
+                currentDialogue.characterAsset.position === 'left'
+                  ? 'justify-start'
+                  : currentDialogue.characterAsset.position === 'right'
                   ? 'justify-end'
                   : 'justify-center'
-                }`}
+              }`}
             >
               <Image
                 src={currentDialogue.characterAsset.url}
