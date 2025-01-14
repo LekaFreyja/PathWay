@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import AuthGuard from './AuthGuard';
 
-const GameWindow = ({ initialSceneId }) => {
+const GameWindow = ({ initialSceneId, className }) => {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -80,7 +80,10 @@ const GameWindow = ({ initialSceneId }) => {
 
   return (
     <AuthGuard>
-      <div className="relative w-screen h-screen flex flex-col" onClick={handleNextDialogue}>
+      <div
+        className={`relative w-full h-full flex flex-col ${className}`}
+        onClick={handleNextDialogue}
+      >
         {backgroundUrl && (
           <Image
             src={backgroundUrl}
@@ -106,8 +109,8 @@ const GameWindow = ({ initialSceneId }) => {
                 src={currentDialogue.characterAsset.url}
                 alt={currentDialogue.characterAsset.name}
                 layout="fixed"
-                width={400}
-                height={800}
+                width={400} // Фиксированная ширина персонажа
+                height={800} // Фиксированная высота персонажа
               />
             </div>
           )}

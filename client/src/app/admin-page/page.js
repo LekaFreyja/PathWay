@@ -38,6 +38,7 @@ export default function AdminPanel() {
 
     const [sceneName, setSceneName] = useState("");
     const [sceneOrder, setSceneOrder] = useState("");
+    const [sceneBranch, setSceneBranch] = useState("");
     const [sceneDescription, setSceneDescription] = useState("");  // Состояние для описания сцены
     const [backgroundAssets, setBackgroundAssets] = useState(''); // Идентификатор выбранного ассета
     const [backgroundAsset, setBackgroundAsset] = useState(''); // Идентификатор выбранного ассета
@@ -46,15 +47,38 @@ export default function AdminPanel() {
     const [scenes, setScenes] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [previewSceneId, setPreviewSceneId] = useState('first');
-  
 
-  
-    const handlePreview = () => {
-      setIsModalOpen(true);
+    const [isSceneModalOpen, setIsSceneModalOpen] = useState(false);
+    const [selectedScene, setSelectedScene] = useState(null);
+
+    const handleSceneClick = async (sceneId) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/api/scenes/${sceneId}`);
+            const sceneData = response.data;
+            setName(sceneData.name);
+            setDescription(sceneData.description);
+            setOrder(sceneData.order);
+            setBranch(sceneData.branch);
+            setAssetId(sceneData.assetId);
+            setSelectedScene(sceneData);
+            setIsSceneModalOpen(true);
+            setSceneId(sceneData.id)
+            console.log(sceneData.id)
+        } catch (error) {
+            setMessage('Error fetching scene data');
+        }
     };
-  
+
+    const closeSceneModal = () => {
+        setIsSceneModalOpen(false);
+        setSelectedScene(null);
+    };
+    const handlePreview = () => {
+        setIsModalOpen(true);
+    };
+
     const closeModal = () => {
-      setIsModalOpen(false);
+        setIsModalOpen(false);
     };
     const fetchAssetsAndScenes = async () => {
         try {
@@ -102,14 +126,15 @@ export default function AdminPanel() {
         e.preventDefault();
         try {
             await axios.put(`http://localhost:3000/api/scenes/${sceneId}`, { name, description, order, branch, assetId });
-            alert('Scene updated successfully!');
+            alert('Сцена успешно добавлена!');
         } catch (error) {
-            alert('Error updating scene.');
+            console.log(error)
+            alert('Ошибка при добавлении сцены.');
         }
     };
-// Form state for choices
-const [choiceText, setChoiceText] = useState("");
-const [nextSceneId, setNextSceneId] = useState("");
+    // Form state for choices
+    const [choiceText, setChoiceText] = useState("");
+    const [nextSceneId, setNextSceneId] = useState("");
 
     const handleAddChoice = async (e) => {
         e.preventDefault();
@@ -119,10 +144,10 @@ const [nextSceneId, setNextSceneId] = useState("");
                 text: choiceText,
                 nextSceneId,
             });
-            setMessage('Choice added successfully');
+            setMessage('Выбор успешно добавлен');
             fetchAssetsAndScenes();
         } catch (error) {
-            setMessage('Error adding choice');
+            setMessage('Ошибка при добавлении выбора');
         }
     };
 
@@ -130,9 +155,9 @@ const [nextSceneId, setNextSceneId] = useState("");
         e.preventDefault();
         try {
             await axios.put(`http://localhost:3000/api/scenes/${sceneId}`, { branch });
-            alert('Branch updated successfully!');
+            alert('Ветка успешно обновлена!');
         } catch (error) {
-            alert('Error updating branch.');
+            alert('Ошибка при обновлении ветки.');
         }
     };
 
@@ -172,10 +197,10 @@ const [nextSceneId, setNextSceneId] = useState("");
                 order,
                 position
             });
-            setMessage('Dialogue added successfully');
+            setMessage('Реплика успешно добавлена');
             fetchAssetsAndScenes();
         } catch (error) {
-            setMessage('Error adding dialogue');
+            setMessage('Ошибка при добавлении реплики');
         }
     };
 
@@ -185,156 +210,315 @@ const [nextSceneId, setNextSceneId] = useState("");
             await axios.post("http://localhost:3000/api/scenes", {
                 name: sceneName,
                 order: sceneOrder,
+                branch: sceneBranch,
                 description: sceneDescription,  // Добавляем описание
                 assetId: backgroundAsset
             });
-            setMessage("Scene added successfully!");
+            setMessage("Сцена успешно добавлена!");
             fetchAssetsAndScenes();
         } catch (error) {
-            setMessage("Error adding scene.");
+            setMessage("Ошибка при добавлении сцены.");
         }
     };
 
     return (
         <AuthGuard requiredRole={'admin'}>
-<div className="flex h-full items-center justify-center min-h-screen bg-gray-900 p-4">
-    <div className="flex w-full max-w-7xl">
-        <div className="flex-grow bg-gray-800 p-8 rounded-lg shadow-lg" style={{ width: "80%" }}>
-            <h2 className="text-3xl mb-6 text-center text-white">Admin Panel</h2>
+            <div className="flex h-full items-center justify-center min-h-screen bg-gray-900 p-4">
+                <div className="flex w-full max-w-7xl">
+                    <div className="flex-grow bg-gray-800 p-8 rounded-lg shadow-lg" style={{ width: "80%" }}>
+                        <h2 className="text-3xl mb-6 text-center text-white">Admin Panel</h2>
 
-                    {/* Tabs */}
-                    <div className="flex justify-center space-x-4 mb-6">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                className={`py-2 px-4 rounded-md text-lg ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400"}`}
-                                onClick={() => setActiveTab(tab.id)}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Displaying the form based on active tab */}
-                    {activeTab === "assets" && (
-                        <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
-                            <h3 className="text-3xl text-white mb-6 text-center">Ассеты</h3>
-                            <form onSubmit={handleAddAsset} className="grid gap-6">
-                                {/* Asset Name */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Название ассета</label>
-                                    <input
-                                        type="text"
-                                        value={assetName}
-                                        onChange={(e) => setAssetName(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    />
-                                </div>
-                                {/* Asset Type */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Тип ассета</label>
-                                    <select
-                                        value={assetType}
-                                        onChange={(e) => setAssetType(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    >
-                                        <option value="">Выберите тип</option>
-                                        <option value="background">Фон</option>
-                                        <option value="character">Персонаж</option>
-                                        <option value="item">Предмет</option>
-                                        <option value="other">Другое</option>
-                                    </select>
-                                </div>
-
-                                {/* Asset Position */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Позиция</label>
-                                    <select
-                                        value={assetPosition}
-                                        onChange={(e) => setAssetPosition(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    >
-                                        <option value="">Выберите позицию</option>
-                                        <option value="left">Левый</option>
-                                        <option value="left-center">Левый центр</option>
-                                        <option value="center">Центр</option>
-                                        <option value="right-center">Правый центр</option>
-                                        <option value="right">Правый</option>
-                                    </select>
-                                </div>
-
-                                {/* Asset File */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Файл ассета</label>
-                                    <input
-                                        type="file"
-                                        onChange={(e) => setAssetFile(e.target.files[0])}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Submit Button */}
+                        {/* Tabs */}
+                        <div className="flex justify-center space-x-4 mb-6">
+                            {tabs.map((tab) => (
                                 <button
-                                    type="submit"
-                                    className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    key={tab.id}
+                                    className={`py-2 px-4 rounded-md text-lg ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400"}`}
+                                    onClick={() => setActiveTab(tab.id)}
                                 >
-                                    Загрузить ассет
+                                    {tab.label}
                                 </button>
-                            </form>
+                            ))}
                         </div>
-                    )}
 
-                    {activeTab === "dialogues" && (
-                        <div className="mb-8">
-                            <h3 className="text-xl text-white mb-4">Реплики</h3>
-                            {characters.length === 0 || scenes.length === 0 ? (
-                                <p className="text-red-500 text-center">Please add some characters and scenes before adding dialogues.</p>
-                            ) : (
-                                <form onSubmit={handleAddDialogue} className="grid gap-4">
-                                    {/* Dialogue Text */}
+                        {/* Displaying the form based on active tab */}
+                        {activeTab === "assets" && (
+                            <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                                <h3 className="text-3xl text-white mb-6 text-center">Ассеты</h3>
+                                <form onSubmit={handleAddAsset} className="grid gap-6">
+                                    {/* Asset Name */}
                                     <div className="flex flex-col">
-                                        <label className="text-gray-400">Текст</label>
-                                        <textarea
-                                            value={dialogueText}
-                                            onChange={(e) => setDialogueText(e.target.value)}
+                                        <label className="text-gray-400">Название ассета</label>
+                                        <input
+                                            type="text"
+                                            value={assetName}
+                                            onChange={(e) => setAssetName(e.target.value)}
                                             className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                            rows="4"
+                                            required
+                                        />
+                                    </div>
+                                    {/* Asset Type */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Тип ассета</label>
+                                        <select
+                                            value={assetType}
+                                            onChange={(e) => setAssetType(e.target.value)}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            required
+                                        >
+                                            <option value="">Выберите тип</option>
+                                            <option value="background">Фон</option>
+                                            <option value="character">Персонаж</option>
+                                            <option value="item">Предмет</option>
+                                            <option value="other">Другое</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Asset Position */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Позиция</label>
+                                        <select
+                                            value={assetPosition}
+                                            onChange={(e) => setAssetPosition(e.target.value)}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            required
+                                        >
+                                            <option value="">Выберите позицию</option>
+                                            <option value="left">Левый</option>
+                                            <option value="left-center">Левый центр</option>
+                                            <option value="center">Центр</option>
+                                            <option value="right-center">Правый центр</option>
+                                            <option value="right">Правый</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Asset File */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Файл ассета</label>
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setAssetFile(e.target.files[0])}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                             required
                                         />
                                     </div>
 
-                                    {/* Character */}
+                                    {/* Submit Button */}
+                                    <button
+                                        type="submit"
+                                        className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                        Загрузить ассет
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {activeTab === "dialogues" && (
+                            <div className="mb-8">
+                                <h3 className="text-xl text-white mb-4">Реплики</h3>
+                                {characters.length === 0 || scenes.length === 0 ? (
+                                    <p className="text-red-500 text-center">Please add some characters and scenes before adding dialogues.</p>
+                                ) : (
+                                    <form onSubmit={handleAddDialogue} className="grid gap-4">
+                                        {/* Dialogue Text */}
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Текст</label>
+                                            <textarea
+                                                value={dialogueText}
+                                                onChange={(e) => setDialogueText(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                rows="4"
+                                                required
+                                            />
+                                        </div>
+
+                                        {/* Character */}
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Персонаж</label>
+                                            <select
+                                                value={dialogueCharacter}
+                                                onChange={(e) => setDialogueCharacter(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            >
+                                                <option value="">Select Character</option>
+                                                {characters.map((character) => (
+                                                    <option key={character.id} value={character.id}>
+                                                        {character.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Scene */}
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Сцена</label>
+                                            <select
+                                                value={scenes.id}
+                                                onChange={(e) => setSceneId(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            >
+                                                <option value="">Select Scene</option>
+                                                {scenes.map((scene) => (
+                                                    <option key={scene.id} value={scene.id}>
+                                                        {scene.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Order */}
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Порядок</label>
+                                            <select
+                                                value={scenes.order}
+                                                onChange={(e) => setOrder(Number(e.target.value))}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            >
+                                                <option value="">Порядок</option>
+                                                {lastDialogue.map((dialogue) => (
+                                                    <option key={dialogue.order} value={dialogue.order}>
+                                                        {dialogue.text}
+                                                    </option>
+                                                ))}
+                                                {/* Новый элемент с порядком на 1 выше последнего */}
+                                                <option
+                                                    value={lastDialogue.length > 0 ? Math.max(...lastDialogue.map(d => d.order)) + 1 : 1}
+                                                >
+                                                    Новый диалог (Порядок {lastDialogue.length > 0 ? Math.max(...lastDialogue.map(d => d.order)) + 1 : 1})
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        {/* Position */}
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Позиция (x, y)</label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="number"
+                                                    value={scenes.position}
+                                                    onChange={(e) => setPosition({ ...position, x: Number(e.target.value) })}
+                                                    className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                    placeholder="x"
+                                                    required
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={scenes.position}
+                                                    onChange={(e) => setPosition({ ...position, y: Number(e.target.value) })}
+                                                    className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                    placeholder="y"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
+                                            Добавить реплику
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === "scenes" && (
+                            <div className="mb-8">
+                                <h3 className="text-xl text-white mb-4">Сцены</h3>
+                                <form onSubmit={handleAddScene} className="grid gap-4">
+                                    {/* Scene Name */}
                                     <div className="flex flex-col">
-                                        <label className="text-gray-400">Персонаж</label>
+                                        <label className="text-gray-400">Название сцены</label>
+                                        <input
+                                            type="text"
+                                            value={sceneName}
+                                            onChange={(e) => setSceneName(e.target.value)}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Scene Order */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Порядок</label>
+                                        <input
+                                            type="number"
+                                            value={sceneOrder}
+                                            onChange={(e) => setSceneOrder(Number(e.target.value))}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            required
+                                        />
+                                    </div>
+                                    {/* Scene Branch */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Ветка</label>
+                                        <input
+                                            type="number"
+                                            value={sceneBranch}
+                                            onChange={(e) => setSceneBranch(Number(e.target.value))}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            required
+                                        />
+                                    </div>
+                                    {/* Description */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Описание</label>
+                                        <textarea
+                                            value={sceneDescription}
+                                            onChange={(e) => setSceneDescription(e.target.value)}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            rows="4"
+                                        />
+                                    </div>
+
+                                    {/* Background Selection */}
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Выбери фон</label>
                                         <select
-                                            value={dialogueCharacter}
-                                            onChange={(e) => setDialogueCharacter(e.target.value)}
+                                            value={backgroundAsset}
+                                            onChange={(e) => setBackgroundAsset(e.target.value)}
                                             className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                             required
                                         >
-                                            <option value="">Select Character</option>
-                                            {characters.map((character) => (
-                                                <option key={character.id} value={character.id}>
-                                                    {character.name}
+                                            <option value="">Select Background</option>
+                                            {backgroundAssets.map((asset) => (
+                                                <option key={asset.id} value={asset.id}>
+                                                    {asset.name}
                                                 </option>
                                             ))}
                                         </select>
                                     </div>
 
-                                    {/* Scene */}
+                                    <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
+                                        Добавить сцену
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+                        {activeTab === "choice" && (
+                            <div className="mb-8">
+                                <h3 className="text-xl text-white mb-4">Выборы</h3>
+                                <form onSubmit={handleAddChoice} className="grid gap-4">
+                                    <div className="flex flex-col">
+                                        <label className="text-gray-400">Текст выбора</label>
+                                        <textarea
+                                            value={choiceText}
+                                            onChange={(e) => setChoiceText(e.target.value)}
+                                            className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            rows="4"
+                                            required
+                                        />
+                                    </div>
                                     <div className="flex flex-col">
                                         <label className="text-gray-400">Сцена</label>
                                         <select
-                                            value={scenes.id}
+                                            value={sceneId}
                                             onChange={(e) => setSceneId(e.target.value)}
                                             className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                             required
                                         >
-                                            <option value="">Select Scene</option>
+                                            <option value="">Выберите сцену</option>
                                             {scenes.map((scene) => (
                                                 <option key={scene.id} value={scene.id}>
                                                     {scene.name}
@@ -342,260 +526,201 @@ const [nextSceneId, setNextSceneId] = useState("");
                                             ))}
                                         </select>
                                     </div>
-
-                                    {/* Order */}
                                     <div className="flex flex-col">
-                                        <label className="text-gray-400">Порядок</label>
+                                        <label className="text-gray-400">Ветка после выбора</label>
                                         <select
-                                            value={scenes.order}
-                                            onChange={(e) => setOrder(Number(e.target.value))}
+                                            value={nextSceneId}
+                                            onChange={(e) => setNextSceneId(e.target.value)}
                                             className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                            required
                                         >
-                                            <option value="">Порядок</option>
-                                            {lastDialogue.map((dialogue) => (
-                                                <option key={dialogue.order} value={dialogue.order}>
-                                                    {dialogue.text}
+                                            <option value="">Выберите сцену</option>
+                                            {scenes.map((scene) => (
+                                                <option key={scene.id} value={scene.id}>
+                                                    {scene.name}
                                                 </option>
                                             ))}
-                                            {/* Новый элемент с порядком на 1 выше последнего */}
-                                            <option
-                                                value={lastDialogue.length > 0 ? Math.max(...lastDialogue.map(d => d.order)) + 1 : 1}
-                                            >
-                                                Новый диалог (Порядок {lastDialogue.length > 0 ? Math.max(...lastDialogue.map(d => d.order)) + 1 : 1})
-                                            </option>
                                         </select>
                                     </div>
+                                    <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
+                                        Добавить выбор
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+                        {activeTab === "editscene" && (
+                            <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                                <h2 className="text-3xl text-white mb-6 text-center">Редактор сцен</h2>
+                                <div className="grid gap-6">
+                                    {scenes.map((scene) => (
+                                        <div
+                                            key={scene.id}
+                                            className="p-4 bg-gray-700 rounded cursor-pointer hover:bg-gray-600"
+                                            onClick={() => handleSceneClick(scene.id)}
+                                        >
+                                            {scene.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
-                                    {/* Position */}
-                                    <div className="flex flex-col">
-                                        <label className="text-gray-400">Позиция (x, y)</label>
-                                        <div className="flex space-x-2">
+                        {isSceneModalOpen && selectedScene && (
+                            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                                <div className="bg-gray-800 text-white rounded-lg w-full max-w-3xl p-6 shadow-lg">
+                                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={closeSceneModal}>
+                                        &times;
+                                    </button>
+                                    <h3 className="text-2xl mb-4">Редактировать сцену: {selectedScene.name}</h3>
+                                    <form onSubmit={handleSubmitEditScene} className="grid gap-6">
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Название сцены</label>
                                             <input
-                                                type="number"
-                                                value={scenes.position}
-                                                onChange={(e) => setPosition({ ...position, x: Number(e.target.value) })}
-                                                className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                                placeholder="x"
-                                                required
-                                            />
-                                            <input
-                                                type="number"
-                                                value={scenes.position}
-                                                onChange={(e) => setPosition({ ...position, y: Number(e.target.value) })}
-                                                className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                                placeholder="y"
+                                                type="text"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                                 required
                                             />
                                         </div>
-                                    </div>
-
-                                    <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
-                                        Добавить реплику
-                                    </button>
-                                </form>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === "scenes" && (
-                        <div className="mb-8">
-                            <h3 className="text-xl text-white mb-4">Сцены</h3>
-                            <form onSubmit={handleAddScene} className="grid gap-4">
-                                {/* Scene Name */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Название сцены</label>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Описание</label>
+                                            <textarea
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                rows="4"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Порядок</label>
+                                            <input
+                                                type="number"
+                                                value={order}
+                                                onChange={(e) => setOrder(Number(e.target.value))}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">Ветка</label>
+                                            <input
+                                                type="text"
+                                                value={branch}
+                                                onChange={(e) => setBranch(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-gray-400">ID ассета</label>
+                                            <input
+                                                type="text"
+                                                value={assetId}
+                                                onChange={(e) => setAssetId(e.target.value)}
+                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                            Обновить сцену
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === "branch" && (
+                            <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                                <h2>Edit Branch</h2>
+                                <form onSubmit={handleSubmitBranch}>
                                     <input
                                         type="text"
-                                        value={sceneName}
-                                        onChange={(e) => setSceneName(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Scene Order */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Порядок</label>
-                                    <input
-                                        type="number"
-                                        value={sceneOrder}
-                                        onChange={(e) => setSceneOrder(Number(e.target.value))}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Description */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Описание</label>
-                                    <textarea
-                                        value={sceneDescription}
-                                        onChange={(e) => setSceneDescription(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        rows="4"
-                                    />
-                                </div>
-
-                                {/* Background Selection */}
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Выбери фон</label>
-                                    <select
-                                        value={backgroundAsset}
-                                        onChange={(e) => setBackgroundAsset(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        required
-                                    >
-                                        <option value="">Select Background</option>
-                                        {backgroundAssets.map((asset) => (
-                                            <option key={asset.id} value={asset.id}>
-                                                {asset.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
-                                    Добавить сцену
-                                </button>
-                            </form>
-                        </div>
-                    )}
-                    {activeTab === "choice" && (
-                        <div className="mb-8">
-                            <h3 className="text-xl text-white mb-4">Выборы</h3>
-                            <form onSubmit={handleAddChoice} className="grid gap-4">
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Текст выбора</label>
-                                    <textarea
-                                        value={choiceText}
-                                        onChange={(e) => setChoiceText(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                        rows="4"
-                                        required
-                                    />
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Сцена</label>
-                                    <select
+                                        placeholder="Scene ID"
                                         value={sceneId}
                                         onChange={(e) => setSceneId(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                         required
-                                    >
-                                        <option value="">Выберите сцену</option>
-                                        {scenes.map((scene) => (
-                                            <option key={scene.id} value={scene.id}>
-                                                {scene.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-gray-400">Ветка после выбора</label>
-                                    <select
-                                        value={nextSceneId}
-                                        onChange={(e) => setNextSceneId(e.target.value)}
-                                        className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Branch"
+                                        value={branch}
+                                        onChange={(e) => setBranch(e.target.value)}
                                         required
-                                    >
-                                        <option value="">Выберите сцену</option>
-                                        {scenes.map((scene) => (
-                                            <option key={scene.id} value={scene.id}>
-                                                {scene.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    />
+                                    <button type="submit">Update Branch</button>
+                                </form>
+                            </div>
+                        )}
+                        {/* Message */}
+                        {message && <p className="mt-4 text-green-500 text-center">{message}</p>}
+                        {/* Logout and Navigation Buttons */}
+                        <div className="flex justify-between mt-8">
+                            <button
+                                onClick={() => { handleLogout() }}
+                                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all"
+                            >
+                                Выйти
+                            </button>
+                            <button
+                                onClick={() => handleNavigation('/menu')}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+                            >
+                                Вернуться в меню
+                            </button>
+
+                        </div>
+                        <div className='flex justify-center'>
+                            {/* Preview Button */}
+                            <button
+                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+                                onClick={handlePreview}
+                            >
+                                Предпросмотр сцены
+                            </button>
+                            {/* Modal */}
+                            {isModalOpen && (
+                                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                                    <div className="relative bg-white rounded-lg w-1/2 h-1/2 p-4">
+                                        <button className="absolute top-2 right-2 text-gray-600" onClick={closeModal}>
+                                            &times;
+                                        </button>
+                                        <div className="w-full h-full overflow-hidden">
+                                            <GameWindow initialSceneId={previewSceneId} className="w-full h-full" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
-                                    Добавить выбор
-                                </button>
-                            </form>
+                            )}
                         </div>
-                    )}
-                    {activeTab === "branch" && (
-                        <div className="bg-gray-800 p-8 rounded-lg shadow-md max-w-4xl mx-auto">
-                            <h2>Edit Branch</h2>
-                            <form onSubmit={handleSubmitBranch}>
-                                <input
-                                    type="text"
-                                    placeholder="Scene ID"
-                                    value={sceneId}
-                                    onChange={(e) => setSceneId(e.target.value)}
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Branch"
-                                    value={branch}
-                                    onChange={(e) => setBranch(e.target.value)}
-                                    required
-                                />
-                                <button type="submit">Update Branch</button>
-                            </form>
+
+                    </div>
+                    <div className="w-2/5 p-4 rounded-lg shadow-md ml-4" style={{ minHeight: "100vh", backgroundColor: "#2a2a2a" }}>
+                        <h3 className="text-xl text-white mb-2 text-center">Пользователи</h3>
+                        <div className="overflow-auto"> {/* Обертка для адаптивности таблицы */}
+                            <table className="w-full text-left bg-gray-700 text-white rounded-lg">
+                                <thead>
+                                    <tr>
+                                        <th className="text-sm py-2 px-2">Username</th>
+                                        <th className="text-sm py-2 px-4">Email</th>
+                                        <th className="text-sm py-2 px-4">Role</th>
+                                        <th className="text-sm py-2 px-4">Verified</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map(user => (
+                                        <tr key={user.email}>
+                                            <td className="text-sm py-2 px-2 border-t border-gray-600">{user.username}</td>
+                                            <td className="text-sm py-2 px-2 border-t border-gray-600">{user.email}</td>
+                                            <td className="text-sm py-2 px-2 border-t border-gray-600">{user.role}</td>
+                                            <td className="text-sm py-2 px-2 border-t border-gray-600">{user.verified ? 'Yes' : 'No'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
-                    {/* Message */}
-                    {message && <p className="mt-4 text-green-500 text-center">{message}</p>}
-                    {/* Logout and Navigation Buttons */}
-                    <div className="flex justify-between mt-8">
-                        <button
-                            onClick={() => { handleLogout() }}
-                            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all"
-                        >
-                            Выйти
-                        </button>
-                        <button
-                            onClick={() => handleNavigation('/menu')}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
-                        >
-                            Вернуться в меню
-                        </button>
-                                    {/* Preview Button */}
-            <button
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-              onClick={handlePreview}
-            >
-              Предпросмотр сцены
-            </button>
-            {/* Modal */}
-            {isModalOpen && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="bg-white rounded-lg w-1/2 h-1/2 p-4">
-                  <button className="absolute top-2 right-2 text-gray-600" onClick={closeModal}>
-                    &times;
-                  </button>
-                  <GameWindow initialSceneId={previewSceneId} />
-                </div>
-              </div>
-            )}
+
                     </div>
                 </div>
-                <div className="w-2/5 p-4 rounded-lg shadow-md ml-4" style={{ minHeight: "100vh", backgroundColor: "#2a2a2a" }}>
-            <h3 className="text-xl text-white mb-2 text-center">Пользователи</h3>
-            <div className="overflow-auto"> {/* Обертка для адаптивности таблицы */}
-                <table className="w-full text-left bg-gray-700 text-white rounded-lg">
-                    <thead>
-                        <tr>
-                            <th className="text-sm py-2 px-2">Username</th>
-                            <th className="text-sm py-2 px-4">Email</th>
-                            <th className="text-sm py-2 px-4">Role</th>
-                            <th className="text-sm py-2 px-4">Verified</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map(user => (
-                            <tr key={user.email}>
-                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.username}</td>
-                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.email}</td>
-                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.role}</td>
-                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.verified ? 'Yes' : 'No'}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-                    </div>
-            </div>
             </div>
 
         </AuthGuard>
