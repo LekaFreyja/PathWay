@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from "react";
 import axios from "axios";
 import AuthGuard from '../../components/AuthGuard';
+import GameWindow from '../../components/GameWindow';
+
 
 export default function AdminPanel() {
     const [activeTab, setActiveTab] = useState("assets");
@@ -42,6 +44,18 @@ export default function AdminPanel() {
     const [characters, setCharacters] = useState([]);
     const [lastDialogue, setLastDialogue] = useState([])
     const [scenes, setScenes] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [previewSceneId, setPreviewSceneId] = useState('first');
+  
+
+  
+    const handlePreview = () => {
+      setIsModalOpen(true);
+    };
+  
+    const closeModal = () => {
+      setIsModalOpen(false);
+    };
     const fetchAssetsAndScenes = async () => {
         try {
             const [assetsResponse, scenesResponse] = await Promise.all([
@@ -183,8 +197,8 @@ const [nextSceneId, setNextSceneId] = useState("");
 
     return (
         <AuthGuard requiredRole={'admin'}>
-<div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
-    <div className="flex w-full max-w-6xl">
+<div className="flex h-full items-center justify-center min-h-screen bg-gray-900 p-4">
+    <div className="flex w-full max-w-7xl">
         <div className="flex-grow bg-gray-800 p-8 rounded-lg shadow-lg" style={{ width: "80%" }}>
             <h2 className="text-3xl mb-6 text-center text-white">Admin Panel</h2>
 
@@ -536,28 +550,45 @@ const [nextSceneId, setNextSceneId] = useState("");
                         >
                             Вернуться в меню
                         </button>
-                    </div>
-
+                                    {/* Preview Button */}
+            <button
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+              onClick={handlePreview}
+            >
+              Предпросмотр сцены
+            </button>
+            {/* Modal */}
+            {isModalOpen && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white rounded-lg w-1/2 h-1/2 p-4">
+                  <button className="absolute top-2 right-2 text-gray-600" onClick={closeModal}>
+                    &times;
+                  </button>
+                  <GameWindow initialSceneId={previewSceneId} />
                 </div>
-                <div className="w-1/5 p-4 rounded-lg shadow-md ml-4" style={{ minHeight: "100vh", backgroundColor: "#2a2a2a" }}>
-            <h3 className="text-xl text-white mb-4">Пользователи</h3>
+              </div>
+            )}
+                    </div>
+                </div>
+                <div className="w-2/5 p-4 rounded-lg shadow-md ml-4" style={{ minHeight: "100vh", backgroundColor: "#2a2a2a" }}>
+            <h3 className="text-xl text-white mb-2 text-center">Пользователи</h3>
             <div className="overflow-auto"> {/* Обертка для адаптивности таблицы */}
-                <table className="w-full text-left bg-gray-700 text-white">
+                <table className="w-full text-left bg-gray-700 text-white rounded-lg">
                     <thead>
                         <tr>
-                            <th className="py-2 px-4">Username</th>
-                            <th className="py-2 px-4">Email</th>
-                            <th className="py-2 px-4">Role</th>
-                            <th className="py-2 px-4">Verified</th>
+                            <th className="text-sm py-2 px-2">Username</th>
+                            <th className="text-sm py-2 px-4">Email</th>
+                            <th className="text-sm py-2 px-4">Role</th>
+                            <th className="text-sm py-2 px-4">Verified</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.map(user => (
                             <tr key={user.email}>
-                                <td className="py-2 px-4 border-t border-gray-600">{user.username}</td>
-                                <td className="py-2 px-4 border-t border-gray-600">{user.email}</td>
-                                <td className="py-2 px-4 border-t border-gray-600">{user.role}</td>
-                                <td className="py-2 px-4 border-t border-gray-600">{user.verified ? 'Yes' : 'No'}</td>
+                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.username}</td>
+                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.email}</td>
+                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.role}</td>
+                                <td className="text-sm py-2 px-2 border-t border-gray-600">{user.verified ? 'Yes' : 'No'}</td>
                             </tr>
                         ))}
                     </tbody>
