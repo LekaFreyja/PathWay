@@ -154,7 +154,6 @@ const GameWindow = ({ initialSceneId, className }) => {
         // Загрузка следующей сцены на основе текущего порядка и ветки
         const nextOrder = scene.order + 1;
         try {
-            await fetchUserProgress(nextOrder-1)
             fetchScene(nextSceneId, nextOrder, branch);
         } catch (err) {
           console.error('Ошибка загрузки следующей сцены:', err);
