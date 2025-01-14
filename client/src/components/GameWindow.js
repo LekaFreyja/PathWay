@@ -4,9 +4,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import AuthGuard from './AuthGuard';
 import axios from 'axios';
+
 const GameWindow = ({ initialSceneId, className }) => {
-
-
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -15,11 +14,14 @@ const GameWindow = ({ initialSceneId, className }) => {
   const [scene, setScene] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [branch, setBranch] = useState(1);
+  const [order, setOrder] = useState(1);
+  const [nextSceneId, setNextSceneId] = useState();
 
   const currentDialogue = useMemo(() => {
     return scene && scene.dialogueLines && scene.dialogueLines[dialogueIndex];
   }, [scene, dialogueIndex]);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -28,16 +30,14 @@ const GameWindow = ({ initialSceneId, className }) => {
           return;
         }
         const response = await axios.get('http://localhost:3000/api/users/me', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         setUserId(response.data.user.id);
-
       } catch (error) {
         console.error('Ошибка при проверке пользователя:', error);
-        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -50,15 +50,16 @@ const GameWindow = ({ initialSceneId, className }) => {
       const res = await fetch('http://localhost:3000/api/scenes');
       const data = await res.json();
       const sortedScenes = data.sort((a, b) => a.order - b.order);
+      console.log(sortedScenes)
       return sortedScenes;
     } catch (err) {
       console.error('Ошибка загрузки всех сцен:', err);
     }
   }, []);
 
-  const fetchUserProgress = useCallback(async () => {
+  const fetchUserProgress = useCallback(async (i) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/useruserprogress/${userId}`);
+      const res = await fetch(`http://localhost:3000/api/userprogress/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setSceneId(data.currentSceneId);
@@ -67,6 +68,13 @@ const GameWindow = ({ initialSceneId, className }) => {
         if (scenes && scenes.length > 0) {
           const firstScene = scenes[0];
           setSceneId(firstScene.id);
+          setBranch(firstScene.branch);
+          setOrder(firstScene.order)
+          if(!i) {
+            i = 1
+          }
+          const nextScene = scenes[i]
+          setNextSceneId(nextScene.id)
           await fetch(`http://localhost:3000/api/userprogress`, {
             method: 'POST',
             headers: {
@@ -75,7 +83,7 @@ const GameWindow = ({ initialSceneId, className }) => {
             body: JSON.stringify({
               userId,
               currentSceneId: firstScene.id,
-              branch: firstScene.id
+              branch: firstScene.branch
             }),
           });
         }
@@ -85,10 +93,10 @@ const GameWindow = ({ initialSceneId, className }) => {
     }
   }, [userId, fetchAllScenes]);
 
-  const fetchScene = useCallback(async (sceneId) => {
+  const fetchScene = useCallback(async (sceneId, order, branch) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}`);
+      const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}/${order}/${branch}`, );
       const data = await res.json();
       const sortedDialogueLines = Array.isArray(data.dialogueLines)
         ? data.dialogueLines.sort((a, b) => a.order - b.order)
@@ -108,7 +116,7 @@ const GameWindow = ({ initialSceneId, className }) => {
 
   useEffect(() => {
     if (sceneId) {
-      fetchScene(sceneId);
+      fetchScene(sceneId,order, branch); 
     }
   }, [sceneId, fetchScene]);
 
@@ -138,9 +146,20 @@ const GameWindow = ({ initialSceneId, className }) => {
     };
   }, [currentDialogue]);
 
-  const handleNextDialogue = () => {
-    if (!isTyping && scene && dialogueIndex < scene.dialogueLines.length - 1) {
-      setDialogueIndex(dialogueIndex + 1);
+  const handleNextDialogue = async () => {
+    if (!isTyping && scene) {
+      if (dialogueIndex < scene.dialogueLines.length - 1) {
+        setDialogueIndex(dialogueIndex + 1);
+      } else {
+        // Загрузка следующей сцены на основе текущего порядка и ветки
+        const nextOrder = scene.order + 1;
+        try {
+            await fetchUserProgress(nextOrder-1)
+            fetchScene(nextSceneId, nextOrder, branch);
+        } catch (err) {
+          console.error('Ошибка загрузки следующей сцены:', err);
+        }
+      }
     } else if (isTyping) {
       const fullText = currentDialogue?.text || '';
       setDisplayedText(fullText);
