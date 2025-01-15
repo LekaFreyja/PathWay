@@ -294,7 +294,7 @@
 import GameWindow from '../../components/GameWindow';
 
 const GamePage = () => {
-  return <GameWindow/>;
+  return <GameWindow isFullScreen={true} />;
 };
 
 export default GamePage;

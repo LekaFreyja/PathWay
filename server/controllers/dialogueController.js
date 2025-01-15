@@ -33,6 +33,24 @@ class DialogueController {
       res.status(500).json({ error: 'Ошибка сервера.' });
     }
   }
+  static async getDialogueById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const dialogue = await DialogueLine.findOne({
+        where: { id }
+      });
+
+      if (!dialogue) {
+        return res.status(404).json({ error: 'Диалог не найден.' });
+      }
+
+      res.status(200).json(dialogue);
+    } catch (error) {
+      console.error('Ошибка при получении данных о диалоге:', error);
+      res.status(500).json({ error: 'Ошибка сервера.' });
+    }
+  }
 
   // Получение всех реплик в сцене
   static async getDialogueLinesByScene(req, res) {
