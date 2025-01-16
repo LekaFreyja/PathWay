@@ -24,7 +24,6 @@ class DialogueController {
         characterId,
         sceneId,
         order,
-        position,
       });
 
       res.status(201).json(newDialogueLine);

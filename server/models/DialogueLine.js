@@ -37,11 +37,6 @@ DialogueLine.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    position: {
-      type: DataTypes.JSON,
-      allowNull: true,
-      defaultValue: { x: 0, y: 0 },
-    },
   },
   {
     sequelize,

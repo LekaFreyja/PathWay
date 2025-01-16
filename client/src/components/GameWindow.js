@@ -147,37 +147,37 @@ useEffect(() => {
     return () => {
       setIsTyping(false);
     };
+    
   }, [currentDialogue]);
 
   const handleNextDialogue = async () => {
-    if (!isTyping && scene) {
-        if (dialogueIndex < scene.dialogueLines.length - 1) {
-            setDialogueIndex(dialogueIndex + 1);
-        } else {
-            // Анимация перехода к следующей сцене
-            setTransition(true);
-            setTimeout(async () => {
-                const nextScene = await fetchNextScene(scene.order + 1);
-                if (nextScene) {
-                    setNextSceneId(nextScene.id);
-                }
-                try {
-                    // Загрузка следующей сцены на черном экране
-                    await fetchScene(nextScene.id, nextScene.order, nextScene.branch);
-                    setTimeout(() => {
-                        setTransition(false);
-                    }, 500); // Задержка для плавного появления новой сцены
-                } catch (err) {
-                    console.error('Ошибка загрузки следующей сцены:', err);
-                }
-            }, 500); // Задержка для затухания текущей сцены
-        }
-    } else if (isTyping) {
-        const fullText = currentDialogue?.text || '';
-        setDisplayedText(fullText);
-        setIsTyping(false);
+    if (isTyping) {
+      setDisplayedText(currentDialogue?.text || '');
+      setIsTyping(false);
+      return;
     }
-};
+  
+    if (dialogueIndex < scene.dialogueLines.length - 1) {
+      setDialogueIndex(dialogueIndex + 1);
+      return;
+    }
+  
+    setTransition(true);
+  
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  
+    try {
+      const nextScene = await fetchNextScene(scene.order + 1);
+      if (nextScene) {
+        await fetchScene(nextScene.id, nextScene.order, nextScene.branch);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки следующей сцены:', err);
+    } finally {
+      setTransition(false);
+    }
+  };
+  
 
 const fetchNextScene = async (nextOrder) => {
     try {
@@ -199,7 +199,12 @@ const fetchNextScene = async (nextOrder) => {
 
   return (
     <AuthGuard>
-      <div className={`relative ${containerClass} flex flex-col ${className} ${transition ? 'fade-out' : 'fade-in'}`} onClick={handleNextDialogue}>
+      <div
+        className={`relative ${containerClass} flex flex-col ${className} ${
+          transition ? 'fade-out' : 'fade-in'
+        }`}
+        onClick={handleNextDialogue}
+      >
         {backgroundUrl && (
           <Image
             src={backgroundUrl}
@@ -231,38 +236,81 @@ const fetchNextScene = async (nextOrder) => {
             </div>
           )}
           {currentDialogue && (
-            <div className="bg-gray-800 text-white px-7 py-3 text-lg w-full h-[150px] flex flex-col justify-center mx-auto rounded-lg">
-              <div className="text-gray-200 px-2 py-2 rounded-lg text-sm mb-4 inline-block">
-                <span className="font-semibold text-yellow-400 whitespace-nowrap">
-                  {currentDialogue.characterAsset?.name || ''}
-                </span>
+            <div className="dialogue-container mx-auto">
+              <div className="character-name">
+                <span>{currentDialogue.characterAsset?.name || ''}</span>
               </div>
-              <p className="overflow-hidden text-ellipsis">{displayedText}</p>
+              <p className="dialogue-text">{displayedText}</p>
             </div>
           )}
         </div>
       </div>
       <style jsx>{`
         .fade-in {
-          animation: fadeIn 0.5s ease-in-out;
+          animation: fadeIn 0.8s ease-in-out forwards;
         }
         .fade-out {
-          animation: fadeOut 0.5s ease-in-out;
+          animation: fadeOut 0.8s ease-in-out forwards;
         }
         @keyframes fadeIn {
           from {
             opacity: 0;
+            transform: scale(0.95);
           }
           to {
             opacity: 1;
+            transform: scale(1);
           }
         }
         @keyframes fadeOut {
           from {
             opacity: 1;
+            transform: scale(1);
           }
           to {
             opacity: 0;
+            transform: scale(1.05);
+          }
+        }
+        .dialogue-container {
+          background: linear-gradient(135deg, rgba(33, 37, 41, 0.9), rgba(55, 65, 81, 0.9));
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+          border-radius: 12px;
+          padding: 16px 24px;
+          width: 95%;
+          max-width: 100%;
+          margin-bottom: 20px;
+          position: relative;
+        }
+        .character-name {
+          position: absolute;
+          top: -20px;
+          left: 16px;
+          background: linear-gradient(135deg, #ff7e5f, #feb47b);
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: bold;
+          color: #ffffff;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dialogue-text {
+          font-size: 1.2rem;
+          line-height: 1.8;
+          color: #e5e7eb;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        @media (max-width: 768px) {
+          .dialogue-container {
+            width: 95%;
+            padding: 12px 16px;
+          }
+          .dialogue-text {
+            font-size: 1rem;
+          }
+          .character-name {
+            font-size: 0.9rem;
           }
         }
       `}</style>
