@@ -22,54 +22,11 @@ class SceneController {
     }
   }
 
-  static async getScenesByBranch(req, res) {
-    try {
-      const { branch } = req.params;
-      const scenes = await Scene.findAll({
-        where: { branch },
-        order: [['order', 'ASC']],
-        include: [
-          {
-            model: Asset,
-            as: 'backgroundAsset',
-            attributes: ['id', 'name', 'type', 'url'],
-          },
-          {
-            model: Asset,
-            as: 'characterAsset',
-            attributes: ['id', 'name', 'type', 'url'],
-          },
-          {
-            model: DialogueLine,
-            as: 'dialogueLines',
-            attributes: ['id', 'text', 'order', 'characterId'],
-            include: [
-              {
-                model: Asset,
-                as: 'characterAsset',
-                attributes: ['id', 'name', 'type', 'url', 'position'],
-              },
-            ],
-            order: [['order', 'ASC']],
-          },
-          {
-            model: Asset,
-            as: 'assets',
-            attributes: ['id', 'name', 'type', 'url'],
-          },
-        ],
-      });
-
-      res.status(200).json(scenes);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching scenes by branch.' });
-    }
-  }
   static async getScene(req, res) {
     try {
-      const { id } = req.params;
+      const { id, order, branch } = req.params;
       const scene = await Scene.findOne({
-        where: { id },
+        where: { id, order, branch },
         attributes: ['id', 'name', 'description', 'order', 'assetId', 'branch'],
         include: [
           {
@@ -162,16 +119,52 @@ class SceneController {
   }
   static async getSceneById(req, res) {
     try {
-      const scene = await Scene.findByPk(req.params.id);
-      if (scene) {
-        res.status(200).json(scene);
-      } else {
-        res.status(404).json({ message: 'Scene not found' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching scene', error });
+      const { id } = req.params;
+      const scene = await Scene.findOne({
+        where: { id },
+      attributes: ['id', 'name', 'description', 'order', 'assetId', 'branch'],
+      include: [
+        {
+          model: Asset,
+          as: 'backgroundAsset',
+          attributes: ['id', 'name', 'type', 'url'],
+        },
+        {
+          model: Asset,
+          as: 'characterAsset',
+          attributes: ['id', 'name', 'type', 'url'],
+        },
+        {
+          model: DialogueLine,
+          as: 'dialogueLines',
+          attributes: ['id', 'text', 'order', 'characterId'],
+          include: [
+            {
+              model: Asset,
+              as: 'characterAsset',
+              attributes: ['id', 'name', 'type', 'url', 'position'],
+            },
+          ],
+          order: [['order', 'ASC']],
+        },
+        {
+          model: Asset,
+          as: 'assets',
+          attributes: ['id', 'name', 'type', 'url'],
+        },
+      ],
+    });
+
+    if (!scene) {
+      return res.status(404).json({ error: 'Scene not found.' });
     }
-  };
+
+    res.json(scene);
+  } catch (error) {
+    console.error('Error fetching scene:', error);
+    res.status(500).json({ error: 'Error fetching scene.' });
+  }
+}
   static async getAllScenes(req, res) {
     try {
       const scene = await Scene.findAll({

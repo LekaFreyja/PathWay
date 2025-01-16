@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from "react";
-import axios from "axios";
+// client/src/app/admin-page/page.js
+import React, { useState, useEffect, useRef } from 'react';
 import AuthGuard from '../../components/AuthGuard';
 import GameWindow from '../../components/GameWindow';
-
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPanel() {
     const [activeTab, setActiveTab] = useState("assets");
@@ -20,6 +20,31 @@ export default function AdminPanel() {
         { id: "branch", label: "Выборы" },
         { id: "editdialogue", label: "Редактор реплик" }
     ];
+    const modalRef = useRef(null);
+    const sceneModalRef = useRef(null);
+    const dialogueModalRef = useRef(null);
+
+
+    const handleOutsideClick = (event) => {
+        if (modalRef.current && !modalRef.current.contains(event.target)) {
+            closeModal();
+        }
+        if (sceneModalRef.current && !sceneModalRef.current.contains(event.target)) {
+            closeSceneModal();
+        }
+        if (dialogueModalRef.current && !dialogueModalRef.current.contains(event.target)) {
+            closeDialogueModal();
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener('mousedown', handleOutsideClick);
+        console.log('Closed')
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+        };
+    }, []);
+
 
     const [assetName, setAssetName] = useState("");
     const [assetType, setAssetType] = useState("");
@@ -612,7 +637,7 @@ export default function AdminPanel() {
 
                         {isSceneModalOpen && selectedScene && (
                             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
-                                <div className="bg-gray-800 text-white rounded-lg w-full max-w-3xl p-6 shadow-lg">
+                                <div className="bg-gray-800 text-white rounded-lg w-full max-w-3xl p-6 shadow-lg" ref={sceneModalRef}>
                                     <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={closeSceneModal}>
                                         &times;
                                     </button>
@@ -702,7 +727,7 @@ export default function AdminPanel() {
 
                         {isDialogueModalOpen && selectedDialogue && (
                             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
-                                <div className="bg-gray-800 text-white rounded-lg w-full max-w-3xl p-6 shadow-lg">
+                                <div className="bg-gray-800 text-white rounded-lg w-full max-w-3xl p-6 shadow-lg" ref={dialogueModalRef}>
                                     <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={closeDialogueModal}>
                                         &times;
                                     </button>
@@ -823,12 +848,9 @@ export default function AdminPanel() {
                             {/* Modal */}
                             {isModalOpen && (
                                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                                    <div className="relative bg-white rounded-lg w-1/2 h-1/2 p-4">
-                                        <button className="absolute top-2 right-2 text-gray-600" onClick={closeModal}>
-                                            &times;
-                                        </button>
+                                    <div className="relative bg-white rounded-lg w-1/2 h-1/2 p-4" ref={modalRef}>
                                         <div className="w-full h-full overflow-hidden">
-                                            <GameWindow initialSceneId={previewSceneId} className="w-full h-full" />
+                                            <GameWindow initialSceneId={previewSceneId} flagPreview={true} className="w-full h-full"/>
                                         </div>
                                     </div>
                                 </div>
