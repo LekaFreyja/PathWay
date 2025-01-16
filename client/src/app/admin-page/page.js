@@ -135,7 +135,26 @@ export default function AdminPanel() {
             setMessage('Error fetching users');
         }
     };
+    const fetchDialoguesForScene = async (sceneId) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/api/dialogues/scene/${sceneId}`);
+            console.log(response.data)
+            return response.data;
+        } catch (error) {
+            setMessage('Error fetching dialogues for the scene');
+            return [];
+        }
+    };
 
+    const handleSceneSelect = async (e) => {
+        const selectedSceneId = e.target.value;
+        setSceneId(selectedSceneId);
+
+        // Fetch dialogues and set order
+        const dialogues = await fetchDialoguesForScene(selectedSceneId);
+        setOrder(dialogues.length + 1);
+    };
+    
     const handleLogout = () => {
         localStorage.removeItem('token');
         window.location.href = '/login';
@@ -269,6 +288,7 @@ export default function AdminPanel() {
             });
             setMessage('Реплика успешно добавлена');
             fetchAssetsAndScenes();
+            fetchDialoguesForScene()
         } catch (error) {
             setMessage('Ошибка при добавлении реплики');
         }
@@ -425,8 +445,8 @@ export default function AdminPanel() {
                                         <div className="flex flex-col">
                                             <label className="text-gray-400">Сцена</label>
                                             <select
-                                                value={scenes.id}
-                                                onChange={(e) => setSceneId(e.target.value)}
+                                                value={sceneId}
+                                                onChange={handleSceneSelect}
                                                 className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
                                                 required
                                             >
@@ -436,29 +456,6 @@ export default function AdminPanel() {
                                                         {scene.name}
                                                     </option>
                                                 ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Order */}
-                                        <div className="flex flex-col">
-                                            <label className="text-gray-400">Порядок</label>
-                                            <select
-                                                value={scenes.order}
-                                                onChange={(e) => setOrder(Number(e.target.value))}
-                                                className="p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                            >
-                                                <option value="">Порядок</option>
-                                                {lastDialogue.map((dialogue) => (
-                                                    <option key={dialogue.order} value={dialogue.order}>
-                                                        {dialogue.text}
-                                                    </option>
-                                                ))}
-                                                {/* Новый элемент с порядком на 1 выше последнего */}
-                                                <option
-                                                    value={lastDialogue.length > 0 ? Math.max(...lastDialogue.map(d => d.order)) + 1 : 1}
-                                                >
-                                                    Новый диалог (Порядок {lastDialogue.length > 0 ? Math.max(...lastDialogue.map(d => d.order)) + 1 : 1})
-                                                </option>
                                             </select>
                                         </div>
 

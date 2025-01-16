@@ -99,29 +99,29 @@ const GameWindow = ({ initialSceneId, flag, className = '', isFullScreen = false
   const fetchScene = useCallback(async (sceneId, order, branch) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}/${order}/${branch}`, );
-      const data = await res.json();
-      const sortedDialogueLines = Array.isArray(data.dialogueLines)
-        ? data.dialogueLines.sort((a, b) => a.order - b.order)
-        : [];
-      setScene({ ...data, dialogueLines: sortedDialogueLines });
-      setDialogueIndex(0);
+        const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}/${order}/${branch}`);
+        const data = await res.json();
+        const sortedDialogueLines = Array.isArray(data.dialogueLines)
+            ? data.dialogueLines.sort((a, b) => a.order - b.order)
+            : [];
+        setScene({ ...data, dialogueLines: sortedDialogueLines });
+        setDialogueIndex(0);
     } catch (err) {
-      console.error('Ошибка загрузки сцены:', err);
+        console.error('Ошибка загрузки сцены:', err);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  }, []);
+}, []);
 
-  useEffect(() => {
+useEffect(() => {
     fetchUserProgress();
-  }, [fetchUserProgress]);
+}, [fetchUserProgress]);
 
-  useEffect(() => {
+useEffect(() => {
     if (sceneId) {
-      fetchScene(sceneId,order, branch); 
+        fetchScene(sceneId, order, branch); 
     }
-  }, [sceneId, fetchScene]);
+}, [sceneId, fetchScene]);
 
   useEffect(() => {
     if (!currentDialogue?.text) return;
@@ -151,30 +151,43 @@ const GameWindow = ({ initialSceneId, flag, className = '', isFullScreen = false
 
   const handleNextDialogue = async () => {
     if (!isTyping && scene) {
-      if (dialogueIndex < scene.dialogueLines.length - 1) {
-        setDialogueIndex(dialogueIndex + 1);
-      } else {
-        // Анимация перехода к следующей сцене
-        setTransition(true);
-        setTimeout(async () => {
-          const nextOrder = scene.order + 1;
-          try {
-              // Загрузка следующей сцены на черном экране
-              await fetchScene(nextSceneId, nextOrder, branch);
-              setTimeout(() => {
-                setTransition(false);
-              }, 500); // Задержка для плавного появления новой сцены
-          } catch (err) {
-            console.error('Ошибка загрузки следующей сцены:', err);
-          }
-        }, 500); // Задержка для затухания текущей сцены
-      }
+        if (dialogueIndex < scene.dialogueLines.length - 1) {
+            setDialogueIndex(dialogueIndex + 1);
+        } else {
+            // Анимация перехода к следующей сцене
+            setTransition(true);
+            setTimeout(async () => {
+                const nextScene = await fetchNextScene(scene.order + 1);
+                if (nextScene) {
+                    setNextSceneId(nextScene.id);
+                }
+                try {
+                    // Загрузка следующей сцены на черном экране
+                    await fetchScene(nextScene.id, nextScene.order, nextScene.branch);
+                    setTimeout(() => {
+                        setTransition(false);
+                    }, 500); // Задержка для плавного появления новой сцены
+                } catch (err) {
+                    console.error('Ошибка загрузки следующей сцены:', err);
+                }
+            }, 500); // Задержка для затухания текущей сцены
+        }
     } else if (isTyping) {
-      const fullText = currentDialogue?.text || '';
-      setDisplayedText(fullText);
-      setIsTyping(false);
+        const fullText = currentDialogue?.text || '';
+        setDisplayedText(fullText);
+        setIsTyping(false);
     }
-  };
+};
+
+const fetchNextScene = async (nextOrder) => {
+    try {
+        const scenes = await fetchAllScenes();
+        return scenes.find(scene => scene.order === nextOrder);
+    } catch (err) {
+        console.error('Ошибка загрузки следующей сцены:', err);
+        return null;
+    }
+};
 
   if (!scene || isLoading) {
     return <div className="text-white text-center">Загрузка...</div>;

@@ -60,11 +60,6 @@ class DialogueController {
       const dialogueLines = await DialogueLine.findAll({
         where: { sceneId },
         order: [['order', 'ASC']], // Сортировка по порядку
-        include: {
-          model: Asset,
-          as: 'character',
-          attributes: ['id', 'name', 'url'],
-        },
       });
 
       res.status(200).json(dialogueLines);
