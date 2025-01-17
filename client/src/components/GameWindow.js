@@ -18,6 +18,8 @@ const GameWindow = ({ initialSceneId, flag, className = '', isFullScreen = false
   const [order, setOrder] = useState(1);
   const [nextSceneId, setNextSceneId] = useState();
   const [transition, setTransition] = useState(false);  // Новое состояние для анимации
+  const [currentCharacter, setCurrentCharacter] = useState(null);
+  const [characterTransition, setCharacterTransition] = useState(false);
 
   const currentDialogue = useMemo(() => {
     return scene && scene.dialogueLines && scene.dialogueLines[dialogueIndex];
@@ -60,20 +62,20 @@ const GameWindow = ({ initialSceneId, flag, className = '', isFullScreen = false
 
   const fetchUserProgress = useCallback(async (i) => {
     try {
-      if(flag) return;
+      if (flag) return;
       const res = await fetch(`http://localhost:3000/api/userprogress/${userId}`);
       if (res.ok) {
         const data = await res.json();
         setSceneId(data.currentSceneId);
       } else {
-        if(flag) return;
+        if (flag) return;
         const scenes = await fetchAllScenes();
         if (scenes && scenes.length > 0) {
           const firstScene = scenes[0];
           setSceneId(firstScene.id);
           setBranch(firstScene.branch);
           setOrder(firstScene.order)
-          if(!i) {
+          if (!i) {
             i = 1
           }
           const nextScene = scenes[i]
@@ -99,29 +101,29 @@ const GameWindow = ({ initialSceneId, flag, className = '', isFullScreen = false
   const fetchScene = useCallback(async (sceneId, order, branch) => {
     setIsLoading(true);
     try {
-        const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}/${order}/${branch}`);
-        const data = await res.json();
-        const sortedDialogueLines = Array.isArray(data.dialogueLines)
-            ? data.dialogueLines.sort((a, b) => a.order - b.order)
-            : [];
-        setScene({ ...data, dialogueLines: sortedDialogueLines });
-        setDialogueIndex(0);
+      const res = await fetch(`http://localhost:3000/api/scenes/${sceneId}/${order}/${branch}`);
+      const data = await res.json();
+      const sortedDialogueLines = Array.isArray(data.dialogueLines)
+        ? data.dialogueLines.sort((a, b) => a.order - b.order)
+        : [];
+      setScene({ ...data, dialogueLines: sortedDialogueLines });
+      setDialogueIndex(0);
     } catch (err) {
-        console.error('Ошибка загрузки сцены:', err);
+      console.error('Ошибка загрузки сцены:', err);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-}, []);
+  }, []);
 
-useEffect(() => {
+  useEffect(() => {
     fetchUserProgress();
-}, [fetchUserProgress]);
+  }, [fetchUserProgress]);
 
-useEffect(() => {
+  useEffect(() => {
     if (sceneId) {
-        fetchScene(sceneId, order, branch); 
+      fetchScene(sceneId, order, branch);
     }
-}, [sceneId, fetchScene]);
+  }, [sceneId, fetchScene]);
 
   useEffect(() => {
     if (!currentDialogue?.text) return;
@@ -147,8 +149,19 @@ useEffect(() => {
     return () => {
       setIsTyping(false);
     };
-    
   }, [currentDialogue]);
+
+  useEffect(() => {
+    if (currentDialogue?.characterAsset) {
+      setCharacterTransition(true);
+      setTimeout(() => {
+        setCurrentCharacter(currentDialogue.characterAsset);
+        setCharacterTransition(false);
+      }, 500); // Duration of the animation
+    }
+  }, [currentDialogue?.characterAsset]);
+
+
 
   const handleNextDialogue = async () => {
     if (isTyping) {
@@ -156,16 +169,16 @@ useEffect(() => {
       setIsTyping(false);
       return;
     }
-  
+
     if (dialogueIndex < scene.dialogueLines.length - 1) {
       setDialogueIndex(dialogueIndex + 1);
       return;
     }
-  
+
     setTransition(true);
-  
+
     await new Promise((resolve) => setTimeout(resolve, 500));
-  
+
     try {
       const nextScene = await fetchNextScene(scene.order + 1);
       if (nextScene) {
@@ -177,17 +190,17 @@ useEffect(() => {
       setTransition(false);
     }
   };
-  
 
-const fetchNextScene = async (nextOrder) => {
+
+  const fetchNextScene = async (nextOrder) => {
     try {
-        const scenes = await fetchAllScenes();
-        return scenes.find(scene => scene.order === nextOrder);
+      const scenes = await fetchAllScenes();
+      return scenes.find(scene => scene.order === nextOrder);
     } catch (err) {
-        console.error('Ошибка загрузки следующей сцены:', err);
-        return null;
+      console.error('Ошибка загрузки следующей сцены:', err);
+      return null;
     }
-};
+  };
 
   if (!scene || isLoading) {
     return <div className="text-white text-center">Загрузка...</div>;
@@ -200,9 +213,8 @@ const fetchNextScene = async (nextOrder) => {
   return (
     <AuthGuard>
       <div
-        className={`relative ${containerClass} flex flex-col ${className} ${
-          transition ? 'fade-out' : 'fade-in'
-        }`}
+        className={`relative ${containerClass} flex flex-col ${className} ${transition ? 'fade-out' : 'fade-in'
+          }`}
         onClick={handleNextDialogue}
       >
         {backgroundUrl && (
@@ -216,25 +228,25 @@ const fetchNextScene = async (nextOrder) => {
           />
         )}
         <div className="flex flex-col justify-end h-full z-10">
-          {currentDialogue?.characterAsset && (
+          {currentCharacter && (
             <div
-              className={`flex items-center ${
-                currentDialogue.characterAsset.position === 'left'
+              className={`flex items-center ${currentCharacter.position === 'left'
                   ? 'justify-start'
-                  : currentDialogue.characterAsset.position === 'right'
-                  ? 'justify-end'
-                  : 'justify-center'
-              }`}
+                  : currentCharacter.position === 'right'
+                    ? 'justify-end'
+                    : 'justify-center'
+                } ${characterTransition ? 'character-move-out' : 'character-move-in'}`}
             >
               <Image
-                src={currentDialogue.characterAsset.url}
-                alt={currentDialogue.characterAsset.name}
+                src={currentCharacter.url}
+                alt={currentCharacter.name}
                 layout="fixed"
                 width={400}
                 height={800}
               />
             </div>
           )}
+
           {currentDialogue && (
             <div className="dialogue-container mx-auto">
               <div className="character-name">
@@ -246,6 +258,32 @@ const fetchNextScene = async (nextOrder) => {
         </div>
       </div>
       <style jsx>{`
+  .character-move-in {
+    animation: moveIn 0.6s ease-in-out forwards;
+  }
+  .character-move-out {
+    animation: moveOut 0.6s ease-in-out forwards;
+  }
+  @keyframes moveIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes moveOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(20%);
+    }
+  }
         .fade-in {
           animation: fadeIn 0.8s ease-in-out forwards;
         }
@@ -255,7 +293,7 @@ const fetchNextScene = async (nextOrder) => {
         @keyframes fadeIn {
           from {
             opacity: 0;
-            transform: scale(0.95);
+            transform: scale(1.05);
           }
           to {
             opacity: 1;

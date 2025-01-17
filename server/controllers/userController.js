@@ -11,7 +11,7 @@ const registerUser = async (req, res) => {
     const { username, email, password } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const emailToken = uuidv4();  // Генерируем токен для подтверждения
+    const emailToken = uuidv4(); 
 
     const newUser = await User.create({
       username,
@@ -22,19 +22,14 @@ const registerUser = async (req, res) => {
 
     // Отправляем письмо с токеном
     const verificationLink = `http://localhost:3000/api/users/verify/${emailToken}`;
-    sendEmail(
-      email,
-      'Подтверждение регистрации',
-      `Для подтверждения аккаунта перейдите по ссылке: ${verificationLink}`
-    );
-
-    res.status(201).json({ message: 'User registered, check your email', user: newUser });
+    sendEmail(email, verificationLink, 'Подтверждение регистрации');
+    res.status(201).json({ message: 'Успешная регистрация, проверьте почту.', user: newUser });
   } catch (error) {
     res.status(500).json({ error: 'Error registering user' });
   }
 };
 
-// Подтверждение email
+
 const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
@@ -45,7 +40,7 @@ const verifyEmail = async (req, res) => {
     }
 
     user.verified = true;
-    user.email_token = null;  // Очищаем токен после верификации
+    user.email_token = null;
     await user.save();
 
     res.status(200).json({ message: 'Email verified successfully' });

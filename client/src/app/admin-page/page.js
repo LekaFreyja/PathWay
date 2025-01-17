@@ -57,10 +57,10 @@ export default function AdminPanel() {
     // Form state for dialogues
     const [dialogueText, setDialogueText] = useState("");
     const [dialogueCharacter, setDialogueCharacter] = useState("");
-    const [sceneId, setSceneId] = useState("");  // Состояние для сцены
-    const [order, setOrder] = useState("");  // Состояние для порядка
-    const [position, setPosition] = useState({ x: "", y: "" });  // Состояние для позиции
-    // Form state for scenes
+    const [sceneId, setSceneId] = useState("");
+    const [order, setOrder] = useState("");
+    const [position, setPosition] = useState({ x: "", y: "" }); 
+
 
     const [sceneName, setSceneName] = useState("");
     const [sceneOrder, setSceneOrder] = useState("");
@@ -458,30 +458,6 @@ export default function AdminPanel() {
                                                 ))}
                                             </select>
                                         </div>
-
-                                        {/* Position */}
-                                        <div className="flex flex-col">
-                                            <label className="text-gray-400">Позиция (x, y)</label>
-                                            <div className="flex space-x-2">
-                                                <input
-                                                    type="number"
-                                                    value={scenes.position}
-                                                    onChange={(e) => setPosition({ ...position, x: Number(e.target.value) })}
-                                                    className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                                    placeholder="x"
-                                                    required
-                                                />
-                                                <input
-                                                    type="number"
-                                                    value={scenes.position}
-                                                    onChange={(e) => setPosition({ ...position, y: Number(e.target.value) })}
-                                                    className="w-1/2 p-2 border border-gray-600 rounded bg-gray-700 text-white"
-                                                    placeholder="y"
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-
                                         <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
                                             Добавить реплику
                                         </button>

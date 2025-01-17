@@ -28,8 +28,13 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded shadow-md max-w-md w-full">
+    <div 
+    className="flex items-center justify-center min-h-screen bg-gray-900"
+    style={{
+      backgroundImage: 'url(/images/menu-bg.jpg)',
+    }}
+    >
+      <div className="bg-gray-800 bg-opacity-75 p-8 rounded shadow-md max-w-md w-full">
         <h2 className="text-2xl mb-4 text-center text-white">Login</h2>
         <form onSubmit={handleLogin}>
           <div className="mb-4">

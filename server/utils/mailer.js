@@ -1,25 +1,32 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Настройка SMTP
 const transporter = nodemailer.createTransport({
-  host: 'smtp.yandex.ru',  // Подходит для Gmail, для других сервисов меняем хост
+  host: 'smtp.yandex.ru',
   port: 465,
-  secure: true,  // true для 465, false для других портов
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
 
-// Функция для отправки письма
-const sendEmail = async (to, subject, text) => {
+const sendEmail = async (to, verificationLink, subject ) => {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2 style="color: #003366;">Подтверждение регистрации</h2>
+      <p>Спасибо за регистрацию! Пожалуйста, подтвердите вашу почту, нажав на кнопку ниже.</p>
+      <a href="${verificationLink}" style="display: inline-block; padding: 10px 20px; background-color: #003366; color: #fff; text-decoration: none; border-radius: 5px;">Подтвердить почту</a>
+      <p>Если вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.</p>
+    </div>
+  `;
+
   try {
     await transporter.sendMail({
-      from: `"Game Novel" <${process.env.EMAIL_USER}>`,
+      from: `"PATHWAY" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text,
+      html: htmlContent,
     });
     console.log(`Email sent to ${to}`);
   } catch (error) {

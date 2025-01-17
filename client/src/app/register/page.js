@@ -24,8 +24,13 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded shadow-md max-w-md w-full">
+    <div 
+    className="flex items-center justify-center min-h-screen bg-gray-900"
+    style={{
+      backgroundImage: 'url(/images/menu-bg.jpg)',
+    }}
+    >
+      <div className="bg-opacity-75 bg-gray-800 p-8 rounded shadow-md max-w-md w-full">
         <h2 className="text-2xl mb-4 text-center text-white">Регистрация</h2>
         <form onSubmit={handleRegister}>
           <div className="mb-4">
